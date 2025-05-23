@@ -1,6 +1,12 @@
 # Service Member Microservice
 
-## Run
+## Note
+You need to create network in docker first, if you have no need to run it
+```cmd
+sudo docker network create app-network-microservice
+```
+
+## Run THIS
 ```cmd
 docker-compose up -d
 ```
@@ -10,4 +16,4 @@ Automatically Build
 - PhpMyAdmin
 - Redis
 
-If faild to run apps, you need to try command
+If fail to run app, you need to try command **THIS**
