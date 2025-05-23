@@ -1,8 +1,6 @@
 package com.member.koptani.exception;
 
 import com.member.koptani.dto.WebResponse;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
