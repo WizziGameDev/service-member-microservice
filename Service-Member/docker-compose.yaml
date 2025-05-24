@@ -58,8 +58,25 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       SERVER_PORT: 9001
-    ports:
-      - "9001:9001"
+#    ports:
+#      - "9001:9001" -> akses luar ga bisa (lewat API Gateway)
+    labels:
+      - "traefik.enable=true"
+
+      # Router utama service-member API
+      - "traefik.http.routers.service-member.rule=PathPrefix(`/api/v1/members`)"
+      - "traefik.http.services.service-member.loadbalancer.server.port=9001"
+      - "traefik.http.routers.service-member.middlewares=ratelimit"
+
+      # Swagger UI router
+      - "traefik.http.routers.swagger-member.rule=PathPrefix(`/api/v1/member/swagger-ui`)"
+      - "traefik.http.routers.swagger-member.entrypoints=web"
+      - "traefik.http.routers.swagger-member.service=service-member"
+
+      # OpenAPI docs router
+      - "traefik.http.routers.api-docs.rule=PathPrefix(`/api/v1/member/v3/api-docs`)"
+      - "traefik.http.routers.api-docs.entrypoints=web"
+      - "traefik.http.routers.api-docs.service=service-member"
     networks:
       - app-network-microservice
     restart: on-failure
