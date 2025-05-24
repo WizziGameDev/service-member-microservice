@@ -5,6 +5,7 @@ import com.member.koptani.dto.MemberRequest;
 import com.member.koptani.dto.MemberResponse;
 import com.member.koptani.dto.WebResponse;
 import com.member.koptani.service.MemberService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -16,6 +17,7 @@ import java.util.function.Supplier;
 
 @RestController
 @RequestMapping(value = "/api/v1")
+@Tag(name = "Members", description = "Operations related to member management (CRUD)")
 public class MemberController {
 
     @Autowired
@@ -34,7 +36,7 @@ public class MemberController {
     }
 
     @GetMapping(
-            value = "/member/{id}",
+            value = "/members/{id}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -47,7 +49,7 @@ public class MemberController {
     }
 
     @PostMapping(
-            value = "/member",
+            value = "/members",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -60,7 +62,7 @@ public class MemberController {
     }
 
     @PutMapping(
-            value = "/member/{id}",
+            value = "/members/{id}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -73,7 +75,7 @@ public class MemberController {
     }
 
     @DeleteMapping(
-            value = "/member/{id}",
+            value = "/members/{id}",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public WebResponse<String> deleteMember(@PathVariable(value = "id") Integer id) {
