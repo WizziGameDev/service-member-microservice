@@ -4,7 +4,7 @@ import com.member.koptani.dto.MemberListResponse;
 import com.member.koptani.dto.MemberRequest;
 import com.member.koptani.dto.MemberResponse;
 import com.member.koptani.entity.Member;
-import com.member.koptani.exception.ApiException;
+import com.member.koptani.exception.MemberException;
 import com.member.koptani.repository.MemberRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ public class MemberServiceImpl implements MemberService {
     @Cacheable(value = "MemberService.getMemberById", key = "#id")
     public MemberResponse getMemberById(Integer id) {
         Member member = memberRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ApiException("Member Not Found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new MemberException("Member Not Found"));
 
         return MemberResponse.builder()
                 .id(member.getId())
@@ -101,7 +101,7 @@ public class MemberServiceImpl implements MemberService {
     })
     public MemberResponse updateMember(Integer id, MemberRequest memberRequest) {
         Member member = memberRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ApiException("Member Not Found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new MemberException("Member Not Found"));
 
         member.setSlug(slugify(memberRequest.getName()));
         member.setName(memberRequest.getName());
@@ -138,7 +138,7 @@ public class MemberServiceImpl implements MemberService {
     })
     public String deleteMember(Integer id) {
         Member member = memberRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ApiException("Member Not Found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new MemberException("Member Not Found"));
         member.setDeletedAt(Instant.now().getEpochSecond());
         memberRepository.save(member);
 

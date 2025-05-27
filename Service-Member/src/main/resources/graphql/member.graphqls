@@ -1,0 +1,56 @@
+scalar Date
+
+""" LIST MEMBER RESPONSE """
+type MemberListResponse {
+    id: Int!
+    slug: String!
+    name: String
+    phoneNumber: String
+    gender: String
+    status: String
+}
+
+""" MEMBER RESPONSE """
+type MemberResponse {
+    id: Int!
+    slug: String!
+    name: String
+    email: String
+    phoneNumber: String
+    address: String
+    nik: Int
+    birthdate: Date
+    gender: String
+    status: String
+}
+
+""" INPUT CREATE & UPDATE MEMBER """
+input MemberRequest {
+    name: String
+    email: String
+    phoneNumber: String
+    address: String
+    nik: String
+    birthdate: Date
+    gender: String
+    status: String
+}
+
+type Query {
+    """ LIST MEMBER """
+    members: [MemberListResponse!]!
+
+    """ MEMBER BY ID"""
+    member(id: Int!): MemberResponse
+}
+
+type Mutation {
+    """ CREATE MEMBER """
+    createMember(input: MemberRequest!): MemberResponse!
+
+    """ UPDATE MEMBER """
+    updateMember(id: Int!, input: MemberRequest!): MemberResponse!
+
+    """ DELETE MEMBER """
+    deleteMember(id: Int!): String!
+}

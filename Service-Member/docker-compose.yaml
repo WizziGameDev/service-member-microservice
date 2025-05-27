@@ -1,27 +1,40 @@
 version: '3.9'
 
+networks:
+  app-network-microservice:
+    external: true
+
 services:
+  # Consul Agent untuk service discovery di node service
+  consul:
+    image: consul:1.14
+    container_name: consul-service
+    command:
+      - agent
+      - -dev
+      - -client=0.0.0.0
+      - -bind=0.0.0.0
+    networks:
+      - app-network-microservice
+    # tidak perlu expose port Consul ke host
+
   mysql:
     image: mysql:8.0
     container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: 12345
       MYSQL_DATABASE: db_tubes_member
-    ports:
-      - "3390:3306"
     networks:
       - app-network-microservice
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
+      interval: 30s
+      timeout: 30s
       retries: 5
 
   redis:
     image: redis:alpine
     container_name: redis
-    ports:
-      - "6390:6379"
     networks:
       - app-network-microservice
 
@@ -31,12 +44,12 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-    ports:
-      - "8081:80"
     depends_on:
       - mysql
     networks:
       - app-network-microservice
+    ports:
+      - "8081:80"
 
   service-member:
     build:
@@ -48,6 +61,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      consul:
+        condition: service_started
     environment:
       SPRING_PROFILES_ACTIVE: dev
       MYSQL_HOST: mysql
@@ -58,29 +73,37 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       SERVER_PORT: 9001
-#    ports:
-#      - "9001:9001" -> akses luar ga bisa (lewat API Gateway)
+    command:
+      - sh
+      - -c
+      - |
+        java -jar app.jar --server.address=0.0.0.0 --server.port=9001 &
+        sleep 5 &&
+        consul services register \
+          -name=service-member \
+          -port=9001 \
+          -check-http=/actuator/health \
+          -check-interval=10s
+    networks:
+      - app-network-microservice
     labels:
       - "traefik.enable=true"
 
-      # Router utama service-member API
-      - "traefik.http.routers.service-member.rule=PathPrefix(`/api/v1/members`)"
+      # Middleware to add X-Forwarded-Prefix
+      - "traefik.http.middlewares.prefix-headers.headers.customrequestheaders.X-Forwarded-Prefix=/api/v1/members"
+
+      # 1) GraphQL API router
+      - "traefik.http.routers.service-member-gql.rule=PathPrefix(`/api/v1/members/graphql`)"
+      - "traefik.http.routers.service-member-gql.entrypoints=web"
+      - "traefik.http.routers.service-member-gql.service=service-member"
+      - "traefik.http.routers.service-member-gql.middlewares=prefix-headers"
+
+      # 2) GraphiQL UI router
+      - "traefik.http.routers.service-member-graphiql.rule=PathPrefix(`/api/v1/members/graphiql`)"
+      - "traefik.http.routers.service-member-graphiql.entrypoints=web"
+      - "traefik.http.routers.service-member-graphiql.service=service-member"
+      - "traefik.http.routers.service-member-graphiql.middlewares=prefix-headers"
+
+      # shared: target port di container-mu
       - "traefik.http.services.service-member.loadbalancer.server.port=9001"
-      - "traefik.http.routers.service-member.middlewares=ratelimit"
-
-      # Swagger UI router
-      - "traefik.http.routers.swagger-member.rule=PathPrefix(`/api/v1/member/swagger-ui`)"
-      - "traefik.http.routers.swagger-member.entrypoints=web"
-      - "traefik.http.routers.swagger-member.service=service-member"
-
-      # OpenAPI docs router
-      - "traefik.http.routers.api-docs.rule=PathPrefix(`/api/v1/member/v3/api-docs`)"
-      - "traefik.http.routers.api-docs.entrypoints=web"
-      - "traefik.http.routers.api-docs.service=service-member"
-    networks:
-      - app-network-microservice
     restart: on-failure
-
-networks:
-  app-network-microservice:
-    external: true
