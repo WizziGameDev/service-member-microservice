@@ -41,7 +41,7 @@ type Query {
     members: [MemberListResponse!]!
 
     """ MEMBER BY ID"""
-    member(id: Int!): MemberResponse
+    memberById(id: Int!): MemberResponse
 }
 
 type Mutation {

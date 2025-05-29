@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 @Controller
-public class MemberController {
+public class MemberResolver {
 
     @Autowired
     private MemberService memberService;
@@ -27,7 +27,7 @@ public class MemberController {
     }
 
     @QueryMapping
-    public MemberResponse member(@Argument Integer id) {
+    public MemberResponse memberById(@Argument Integer id) {
         return runVirtual(() -> memberService.getMemberById(id));
     }
 
