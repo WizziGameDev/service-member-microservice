@@ -47,6 +47,11 @@ public class MemberResolver {
         return runVirtual(() -> memberService.deleteMember(id));
     }
 
+    @MutationMapping
+    public String updateStatusMember(@Argument Integer id, @Argument String  status) {
+        return runVirtual(() -> memberService.updateStatusMember(id, status));
+    }
+
     /**
      * Virtual Thread
      */

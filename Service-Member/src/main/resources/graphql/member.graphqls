@@ -53,4 +53,7 @@ type Mutation {
 
     """ DELETE MEMBER """
     deleteMember(id: Int!): String!
+
+    """ UPDATE STATUS MEMBER """
+    updateStatusMember(id: Int!, status: String!): String!
 }

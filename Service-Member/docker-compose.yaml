@@ -5,27 +5,16 @@ networks:
     external: true
 
 services:
-  # Consul Agent untuk service discovery di node service
-  consul:
-    image: consul:1.14
-    container_name: consul-service
-    command:
-      - agent
-      - -dev
-      - -client=0.0.0.0
-      - -bind=0.0.0.0
-    networks:
-      - app-network-microservice
-    # tidak perlu expose port Consul ke host
-
   mysql:
     image: mysql:8.0
-    container_name: mysql
+    container_name: mysql-member
     environment:
       MYSQL_ROOT_PASSWORD: 12345
       MYSQL_DATABASE: db_tubes_member
     networks:
-      - app-network-microservice
+      app-network-microservice:
+        aliases:
+          - mysql-member
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 30s
@@ -34,22 +23,24 @@ services:
 
   redis:
     image: redis:alpine
-    container_name: redis
+    container_name: redis-member
     networks:
-      - app-network-microservice
+      app-network-microservice:
+        aliases:
+          - redis-member
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
+    container_name: phpmyadmin-member
     environment:
-      PMA_HOST: mysql
+      PMA_HOST: mysql-member
       PMA_PORT: 3306
     depends_on:
       - mysql
-    networks:
-      - app-network-microservice
     ports:
       - "8081:80"
+    networks:
+      - app-network-microservice
 
   service-member:
     build:
@@ -61,49 +52,16 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      consul:
-        condition: service_started
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      MYSQL_HOST: mysql
+      MYSQL_HOST: mysql-member
       MYSQL_PORT: 3306
       MYSQL_DATABASE: db_tubes_member
       MYSQL_USERNAME: root
       MYSQL_PASSWORD: 12345
-      REDIS_HOST: redis
+      REDIS_HOST: redis-member
       REDIS_PORT: 6379
       SERVER_PORT: 9001
-    command:
-      - sh
-      - -c
-      - |
-        java -jar app.jar --server.address=0.0.0.0 --server.port=9001 &
-        sleep 5 &&
-        consul services register \
-          -name=service-member \
-          -port=9001 \
-          -check-http=/actuator/health \
-          -check-interval=10s
     networks:
       - app-network-microservice
-    labels:
-      - "traefik.enable=true"
-
-      # Middleware to add X-Forwarded-Prefix
-      - "traefik.http.middlewares.prefix-headers.headers.customrequestheaders.X-Forwarded-Prefix=/api/v1/members"
-
-      # 1) GraphQL API router
-      - "traefik.http.routers.service-member-gql.rule=PathPrefix(`/api/v1/members/graphql`)"
-      - "traefik.http.routers.service-member-gql.entrypoints=web"
-      - "traefik.http.routers.service-member-gql.service=service-member"
-      - "traefik.http.routers.service-member-gql.middlewares=prefix-headers"
-
-      # 2) GraphiQL UI router
-      - "traefik.http.routers.service-member-graphiql.rule=PathPrefix(`/api/v1/members/graphiql`)"
-      - "traefik.http.routers.service-member-graphiql.entrypoints=web"
-      - "traefik.http.routers.service-member-graphiql.service=service-member"
-      - "traefik.http.routers.service-member-graphiql.middlewares=prefix-headers"
-
-      # shared: target port di container-mu
-      - "traefik.http.services.service-member.loadbalancer.server.port=9001"
     restart: on-failure

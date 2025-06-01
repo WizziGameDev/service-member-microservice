@@ -145,6 +145,20 @@ public class MemberServiceImpl implements MemberService {
         return "Successfully deleted Member";
     }
 
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "MemberService.getMembers", key = "'members'"),
+            @CacheEvict(value = "MemberService.getMemberById", key = "#id")
+    })
+    public String updateStatusMember(Integer id, String status) {
+        Member member = memberRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new MemberException("Member Not Found"));
+        member.setStatus(status);
+        memberRepository.save(member);
+
+        return "Successfully updated status Member";
+    }
+
     public static String slugify(String input) {
         String baseSlug = input
                 .toLowerCase()

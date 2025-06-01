@@ -22,4 +22,7 @@ public interface MemberService {
 
     // Delete Member
     String deleteMember(Integer id);
+
+    // Update Status Member
+    public String updateStatusMember(Integer id, String status);
 }
